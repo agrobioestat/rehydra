@@ -40,7 +40,10 @@ drought-memory concepts:
 }
 
 These metrics are practical, analysis-oriented indicators and not universal
-ecological formulas.
+ecological formulas. For the published stability index of Ribeiro et al.
+(2021) - the ratio of the recovery rate to the disturbance rate, with its
+impact, integrated-impact and perturbation components - use
+\code{\link[=overall_stability]{overall_stability()}} instead.
 }
 \examples{
 data(rehydra_data)

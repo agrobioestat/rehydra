@@ -61,10 +61,27 @@
   installed and are reported as `NA` when it is not, rather than being computed
   from residual degrees of freedom a mixed model does not have.
 
+## Overall stability index
+
+- `overall_stability()`: the six drought-stability indices of Ribeiro et al.
+  (2021) <doi:10.1016/j.jplph.2021.153397> - impact, integrated impact,
+  disturbance rate, perturbation, recovery rate, and the overall stability index
+  `OSt = RR / DR` that combines the last two. The two rates are least-squares
+  slopes over their windows rather than endpoint chords, and each is reported
+  with the R-squared of its fit so a non-linear decline or return is visible
+  rather than hidden inside an average. `OSt` is dimensionless, so it compares
+  across variables measured on different scales, and a rise in `OSt` across
+  cycles is the signature of drought memory - pass the result to
+  `memory_trend()` to test it.
+- `stability_index()` keeps its operational metrics and now points to
+  `overall_stability()` for the published index.
+
 ## Combining indices and variables
 
-- `rehydra_indices()`: every index family joined on one group-and-cycle key, the
-  natural input to `rehydra_anova()` and `memory_trend()`.
+- `rehydra_indices()`: every index family joined on one group-and-cycle key -
+  resilience, damage, recovery, recovery period, mean reduction, curve shape and
+  overall stability - the natural input to `rehydra_anova()` and
+  `memory_trend()`.
 - `composite_resilience()` and `composite_loadings()`: collapse an index measured
   on several physiological variables into a single score, by PCA (with the
   variance explained reported as a diagnostic of whether one score is a fair

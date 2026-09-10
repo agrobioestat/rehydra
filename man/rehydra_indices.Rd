@@ -10,7 +10,7 @@ rehydra_indices(
   value = transformed_value,
   group_by = c("genotype", "treatment", "replicate", "plant_id", "variable", "cycle"),
   families = c("resilience", "damage", "recovery", "recovery_period", "mean_reduction",
-    "shape"),
+    "shape", "stability"),
   prefix = FALSE,
   ...
 )
@@ -25,7 +25,8 @@ rehydra_indices(
 \item{group_by}{Grouping columns; the join key is these columns.}
 
 \item{families}{Which families to include. Any of \code{"resilience"},
-\code{"damage"}, \code{"recovery"}, \code{"recovery_period"}, \code{"mean_reduction"}, \code{"shape"}.}
+\code{"damage"}, \code{"recovery"}, \code{"recovery_period"}, \code{"mean_reduction"},
+\code{"shape"}, \code{"stability"}.}
 
 \item{prefix}{Logical; prefix each column with its family (\code{Rs} becomes
 \code{resilience_Rs}). Useful when several families expose columns with the same

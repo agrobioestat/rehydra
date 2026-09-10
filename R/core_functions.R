@@ -482,7 +482,8 @@ check_rehydra_data <- function(data) {
 #' @return An S3 object of class `rehydra_analysis` with components:
 #' `data`, `checks`, `segments`, `damage`, `recovery`, `recovery_period`, `mean_reduction`,
 #' `curve_shape`, `resilience`, `memory`, `memory_trend`, `stability`,
-#' `classification`, `genotype_comparison`, `parameters`, and `references`.
+#' `overall_stability`, `classification`, `genotype_comparison`, `parameters`,
+#' and `references`.
 #'
 #' @examples
 #' data(rehydra_data)
@@ -614,6 +615,7 @@ summarize_rehydra <- function(
 
   classification <- priming_classification(memory)
   stability <- stability_index(segments)
+  overall <- overall_stability(segments)
   genotype_comparison <- compare_genotypes(resilience, metric = "Rs")
 
   # Multi-cycle memory: only meaningful once `min_cycles` distinct cycles were
@@ -637,6 +639,7 @@ summarize_rehydra <- function(
     memory_trend = trend,
     stability = stability,
     classification = classification,
+    overall_stability = overall,
     genotype_comparison = genotype_comparison,
     parameters = list(
       response_direction = response_direction,
@@ -681,6 +684,8 @@ print.rehydra_analysis <- function(x, ...) {
   cat("Rows (resilience):", nrow(x$resilience), "\n")
   cat("Rows (memory):", nrow(x$memory), "\n")
   cat("Rows (memory trend):", nrow(x$memory_trend %||% tibble::tibble()), "\n")
+  cat("Rows (overall stability):",
+      nrow(x$overall_stability %||% tibble::tibble()), "\n")
   invisible(x)
 }
 
@@ -704,6 +709,7 @@ summary.rehydra_analysis <- function(object, ...) {
     n_rows_resilience = nrow(object$resilience),
     n_rows_memory = nrow(object$memory),
     n_rows_memory_trend = nrow(object$memory_trend %||% tibble::tibble()),
+    n_rows_overall_stability = nrow(object$overall_stability %||% tibble::tibble()),
     n_checks = nrow(object$checks)
   )
 }

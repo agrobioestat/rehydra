@@ -205,6 +205,7 @@ choose one summary of the episode:
 | Duration and total loss | `recovery_period_metrics()` | `recovery_period`, `total_reduction` |
 | Average intensity and rate | `mean_reduction_metrics()` | `mean_reduction`, `mean_recovery_rate` |
 | Curve shape | `curve_shape_metrics()` | `deficit_auc`, `t50`, `recovery_rate_k`, `latency` |
+| Stability | `overall_stability()` | `impact`, `disturbance_rate`, `recovery_rate`, `OSt` |
 | Memory | `memory_effect()`, `memory_trend()` | `Mem_*`, memory rate, priming class |
 | All of them | `rehydra_indices()` | every family joined on one key |
 

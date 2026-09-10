@@ -44,20 +44,28 @@ The app accepts long or wide data. Recommended columns include:
 
 ## Analysis tabs
 
-| Tab | What it shows |
-|---|---|
-| Data | Preview and data-quality checks |
-| Segmentation | Detected cycles and phases with confidence scores |
-| Trajectory | Trajectories with phase shading and index annotations |
-| Damage and Recovery | Classic damage and recovery metrics |
-| Deficit curve (AUC) | Full series with the deficit area shaded, trough and `t50` marked |
-| Extended indices | Recovery-period and mean-reduction components |
-| Resilience | `Rt`, `Rc`, `Rs` |
-| Memory | Pairwise cycle contrasts and priming classes |
-| Multi-cycle memory | Memory trend across cycles, consecutive contrasts |
-| Designed analysis | ANOVA, marginal means, Tukey contrasts, diagnostics |
-| Genotype comparison | Pairwise genotype tests |
-| Export | Downloads |
+The panels are grouped into six sections.
+
+| Section | Panel | What it shows |
+|---|---|---|
+| Data | Data | Preview and data-quality checks |
+| Data | Segmentation | Detected cycles and phases with confidence scores |
+| Dynamics | Trajectory | Trajectories with phase shading and index annotations |
+| Dynamics | Deficit curve (AUC) | Full series with the deficit area shaded, trough and `t50` marked |
+| Indices | Damage and Recovery | Classic damage and recovery metrics |
+| Indices | Extended indices | Recovery-period and mean-reduction components |
+| Indices | Resilience | `Rt`, `Rc`, `Rs` |
+| Indices | Stability | Operational metrics plus the overall stability index `OSt` |
+| Memory | Memory | Pairwise cycle contrasts and priming classes |
+| Memory | Multi-cycle memory | Memory trend across cycles, consecutive contrasts |
+| Statistics | Designed analysis | ANOVA, marginal means, Tukey contrasts, diagnostics |
+| Statistics | Genotype comparison | Pairwise genotype tests |
+| Export | Export | Downloads |
+
+Above the panels, summary tiles report the number of cycles segmented, the
+group-cycle rows, how many cycles had a detected stress, the share of censored
+recoveries and the mean segmentation confidence. The controls can be hidden with
+the checkbox at the top to give the plots the full width.
 
 ### Deficit curve (AUC)
 
@@ -79,6 +87,14 @@ Switch between the resilience family (`Rt`, `Rc`, `Rs`) and the curve-shape
 family (AUC, `t50`, `k`). The fitted slope is the average change per additional
 cycle; read it together with `monotonic_fraction`, which exposes a slope driven
 by the endpoints rather than by a consistent progression.
+
+### Stability
+
+Besides the operational metrics of `stability_index()`, the panel reports
+`overall_stability()`: impact, integrated impact, disturbance rate,
+perturbation, recovery rate and `OSt = RR / DR`. A low disturbance rate means
+the plant resisted the decline and a high recovery rate that it returned fast,
+so a stable plant has a high `OSt`.
 
 ### Designed analysis
 

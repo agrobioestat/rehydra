@@ -9,7 +9,8 @@
 #' @param value Value column used for the calculations.
 #' @param group_by Grouping columns; the join key is these columns.
 #' @param families Which families to include. Any of `"resilience"`,
-#'   `"damage"`, `"recovery"`, `"recovery_period"`, `"mean_reduction"`, `"shape"`.
+#'   `"damage"`, `"recovery"`, `"recovery_period"`, `"mean_reduction"`,
+#'   `"shape"`, `"stability"`.
 #' @param prefix Logical; prefix each column with its family (`Rs` becomes
 #'   `resilience_Rs`). Useful when several families expose columns with the same
 #'   name.
@@ -55,7 +56,8 @@ rehydra_indices <- function(
     time = time,
     value = transformed_value,
     group_by = c("genotype", "treatment", "replicate", "plant_id", "variable", "cycle"),
-    families = c("resilience", "damage", "recovery", "recovery_period", "mean_reduction", "shape"),
+    families = c("resilience", "damage", "recovery", "recovery_period",
+                 "mean_reduction", "shape", "stability"),
     prefix = FALSE,
     ...
 ) {
@@ -102,6 +104,12 @@ rehydra_indices <- function(
   }
   if ("shape" %in% families) {
     tables$shape <- curve_shape_metrics(
+      data = dat, time = {{ time }}, value = {{ value }}, group_by = group_by,
+      baseline_summary = dots$baseline_summary %||% "mean"
+    )
+  }
+  if ("stability" %in% families) {
+    tables$stability <- overall_stability(
       data = dat, time = {{ time }}, value = {{ value }}, group_by = group_by,
       baseline_summary = dots$baseline_summary %||% "mean"
     )

@@ -86,6 +86,14 @@ rehydra_anova(resilience, response = "Rs",
               factors = c("genotype", "treatment", "cycle"),
               by = "variable", random = "plant_id")
 
+# Overall stability: OSt = recovery rate / disturbance rate
+st <- overall_stability(segments)
+st[, c("genotype", "cycle", "disturbance_rate", "recovery_rate",
+       "overall_stability")]
+
+# A rising OSt across cycles is the signature of drought memory
+memory_trend(st, metrics = "overall_stability", min_cycles = 2)
+
 # One resilience score from several physiological variables
 score <- composite_resilience(resilience, metric = "Rs")
 composite_loadings(score)
@@ -131,6 +139,7 @@ plot(analysis)
 | Average intensity and rate | `mean_reduction_metrics()` | `mean_reduction`, `mean_recovery_rate` |
 | Curve shape | `curve_shape_metrics()`, `deficit_curve()` | `deficit_auc`, `t50`, `recovery_rate_k`, `latency` |
 | Damage / recovery | `damage_metrics()`, `recovery_metrics()`, `stability_index()` | drop, rate, AUC, residual cost |
+| Stability | `overall_stability()`, `stability_index()` | `impact`, `disturbance_rate`, `recovery_rate`, `OSt` |
 | Memory | `memory_effect()`, `memory_trend()`, `priming_classification()` | `Mem_*`, memory rate, priming class |
 | Combined | `rehydra_indices()`, `composite_resilience()` | all families joined, multivariable score |
 

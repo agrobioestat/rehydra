@@ -18,7 +18,10 @@
 #' - `memory_stability_gain = stability_C2 - stability_C1`
 #'
 #' These metrics are practical, analysis-oriented indicators and not universal
-#' ecological formulas.
+#' ecological formulas. For the published stability index of Ribeiro et al.
+#' (2021) - the ratio of the recovery rate to the disturbance rate, with its
+#' impact, integrated-impact and perturbation components - use
+#' [overall_stability()] instead.
 #'
 #' @return A tibble with stability metrics by group and cycle.
 #'

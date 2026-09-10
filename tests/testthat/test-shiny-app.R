@@ -36,7 +36,8 @@ test_that("the app exposes the new AUC, extended-index, memory and design tabs",
     "deficit_plot", "curve_shape_plot", "curve_shape_table",
     "extended_plot", "period_table", "reduction_table",
     "memory_trend_plot", "memory_trend_table", "memory_pairs_table",
-    "anova_table", "anova_means", "anova_comparisons", "anova_diagnostics"
+    "anova_table", "anova_means", "anova_comparisons", "anova_diagnostics",
+    "overall_stability_table"
   )
 
   for (out in outputs) {
@@ -134,8 +135,8 @@ test_that("the app runs the full pipeline and serves every new panel", {
 
     res <- analysis()
     expect_false(is.null(res))
-    for (tbl in c("recovery_period", "mean_reduction", "curve_shape", "trend", "shape_trend",
-                  "memory_pairs")) {
+    for (tbl in c("recovery_period", "mean_reduction", "curve_shape", "trend",
+                  "shape_trend", "memory_pairs", "overall_stability")) {
       expect_true(tbl %in% names(res), label = tbl)
     }
     expect_gt(nrow(res$curve_shape), 0)

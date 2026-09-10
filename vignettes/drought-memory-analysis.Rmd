@@ -72,6 +72,28 @@ classification <- priming_classification(memory)
 head(classification)
 ```
 
+## Overall stability
+
+`overall_stability()` implements the index of Ribeiro et al. (2021): the ratio
+of the recovery rate to the disturbance rate, both estimated as least-squares
+slopes.
+
+```r
+st <- overall_stability(segments)
+st[, c("genotype", "cycle", "impact", "disturbance_rate", "recovery_rate",
+       "overall_stability")]
+```
+
+A low `disturbance_rate` means the plant resisted the decline and a high
+`recovery_rate` that it returned quickly, so a stable plant has a high `OSt`.
+Because both rates share the same units, `OSt` is dimensionless and comparable
+across variables. Check `disturbance_r_squared` and `recovery_r_squared` before
+reading a rate as a constant: a low value means the window was not linear.
+
+```r
+memory_trend(st, metrics = "overall_stability", min_cycles = 2)
+```
+
 ## Memory across three or more cycles
 
 `memory_effect()` compares two cycles at a time. When the experiment imposed

@@ -430,7 +430,22 @@ ui <- shiny::fluidPage(
             shiny::tabPanel(
               "Stability",
               shiny::div(class = "rehydra-panel", shiny::plotOutput("stability_plot", height = "430px")),
-              shiny::div(class = "rehydra-panel", if (has_dt) DT::DTOutput("stability_table") else shiny::tableOutput("stability_table"))
+              shiny::div(class = "rehydra-panel", if (has_dt) DT::DTOutput("stability_table") else shiny::tableOutput("stability_table")),
+              shiny::div(
+                class = "rehydra-panel",
+                shiny::h4("Overall stability index (OSt)"),
+                shiny::p(
+                  class = "rehydra-subtitle",
+                  paste(
+                    "OSt is the recovery rate divided by the disturbance rate, both",
+                    "least-squares slopes. A low disturbance rate means the plant",
+                    "resisted the decline and a high recovery rate that it returned",
+                    "fast, so a stable plant has a high OSt. A rise in OSt across",
+                    "cycles is the signature of drought memory."
+                  )
+                ),
+                if (has_dt) DT::DTOutput("overall_stability_table") else shiny::tableOutput("overall_stability_table")
+              )
             )
           )
         ),
@@ -499,6 +514,7 @@ ui <- shiny::fluidPage(
                     choices = c(
                       "Resilience" = "resilience",
                       "Curve shape" = "curve_shape",
+                  "Overall stability" = "overall_stability",
                       "Recovery period" = "recovery_period",
                       "Mean reduction" = "mean_reduction"
                     ),
@@ -966,6 +982,7 @@ server <- function(input, output, session) {
       step("classification and comparisons", 0.9)
       classification <- rehydra_call("priming_classification",memory)
       stability <- rehydra_call("stability_index",segments)
+      overall <- rehydra_call("overall_stability", segments)
       comparison <- rehydra_call("compare_genotypes",resilience, metric = "Rs")
 
       analysis_obj <- structure(
@@ -982,6 +999,7 @@ server <- function(input, output, session) {
           memory = memory,
           memory_trend = trend,
           stability = stability,
+          overall_stability = overall,
           classification = classification,
           genotype_comparison = comparison,
           parameters = list(
@@ -1018,6 +1036,7 @@ server <- function(input, output, session) {
         shape_trend = shape_trend,
         classification = classification,
         stability = stability,
+        overall_stability = overall,
         comparison = comparison,
         report_object = analysis_obj
       )
@@ -1456,6 +1475,19 @@ server <- function(input, output, session) {
     analysis()$stability
   })
 
+  output$overall_stability_table <- render_table({
+    shiny::req(analysis())
+    dplyr::select(
+      analysis()$overall_stability,
+      dplyr::any_of(c(
+        "genotype", "treatment", "replicate", "variable", "cycle",
+        "stress_detected", "impact", "integrated_impact", "disturbance_rate",
+        "disturbance_r_squared", "perturbation", "recovery_rate",
+        "recovery_r_squared", "overall_stability"
+      ))
+    )
+  })
+
   output$comparison_table <- render_table({
     shiny::req(analysis())
     analysis()$comparison$pairwise
@@ -1489,7 +1521,8 @@ server <- function(input, output, session) {
         tag(res$trend, "memory_trend"),
         tag(res$shape_trend, "memory_trend_shape"),
         tag(res$classification, "classification"),
-        tag(res$stability, "stability")
+        tag(res$stability, "stability"),
+        tag(res$overall_stability, "overall_stability")
       )
 
       readr::write_csv(out, file)

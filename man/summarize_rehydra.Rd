@@ -109,7 +109,8 @@ summarize_rehydra(
 An S3 object of class \code{rehydra_analysis} with components:
 \code{data}, \code{checks}, \code{segments}, \code{damage}, \code{recovery}, \code{recovery_period}, \code{mean_reduction},
 \code{curve_shape}, \code{resilience}, \code{memory}, \code{memory_trend}, \code{stability},
-\code{classification}, \code{genotype_comparison}, \code{parameters}, and \code{references}.
+\code{overall_stability}, \code{classification}, \code{genotype_comparison}, \code{parameters},
+and \code{references}.
 }
 \description{
 Run preparation, checks, segmentation, damage/recovery metrics,
