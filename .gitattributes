@@ -1,0 +1,29 @@
+# Force LF line endings for every text file in the repository.
+# CRAN flags files with CRLF endings; keeping the normalization here means
+# every clone and every fresh checkout gets LF regardless of core.autocrlf.
+* text=auto eol=lf
+
+# Explicit rules for the file types shipped by the package.
+*.R      text eol=lf
+*.Rmd    text eol=lf
+*.Rd     text eol=lf
+*.md     text eol=lf
+*.csv    text eol=lf
+*.yaml   text eol=lf
+*.yml    text eol=lf
+*.Rproj  text eol=lf
+DESCRIPTION   text eol=lf
+NAMESPACE     text eol=lf
+LICENSE       text eol=lf
+CITATION      text eol=lf
+.Rbuildignore text eol=lf
+
+# Binary artifacts must never be normalized.
+*.rda    binary
+*.rds    binary
+*.RData  binary
+*.png    binary
+*.jpg    binary
+*.pdf    binary
+*.docx   binary
+*.tar.gz binary

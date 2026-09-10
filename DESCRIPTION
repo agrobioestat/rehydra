@@ -1,0 +1,62 @@
+Package: rehydra
+Type: Package
+Title: Resistance, Recovery and Resilience Indices for Drought-Rewatering
+        Cycles in Plants
+Version: 0.2.0
+Authors@R: person(
+    given = "Joao Everthon da Silva",
+    family = "Ribeiro",
+    email = "everthonribeiro10@gmail.com",
+    role = c("aut", "cre"))
+Description: Quantifies drought damage, resistance, recovery, resilience and
+    physiological memory in plant time series subjected to one or more
+    drought-rewatering cycles. Resistance, recovery and resilience indices are
+    computed following Lloret, Keeling and Sala (2011)
+    <doi:10.1111/j.1600-0706.2011.19372.x>, drought-rewatering concepts follow
+    Xu, Zhou and Shimizu (2010) <doi:10.4161/psb.5.6.11398>, and the
+    drought-memory stability framework follows Ingrisch and Bahn (2018)
+    <doi:10.1016/j.tree.2018.01.013> and Ribeiro and others (2021)
+    <doi:10.1016/j.jplph.2021.153397>. The package
+    adds recovery-period and total-reduction components, mean-reduction and
+    mean-recovery-rate components, damage- and recovery-curve shape descriptors
+    (deficit area under the curve, time to half recovery, exponential recovery
+    rate constant and response latency), automatic or manual segmentation of
+    successive cycles, between-cycle memory indices, bootstrap confidence
+    intervals, designed-experiment analysis of the indices including mixed
+    models for repeated cycles, multivariable composite scores, diurnal
+    detrending of sub-daily series, replication planning, publication-ready
+    graphics, automated reports and a 'shiny' interface.
+License: MIT + file LICENSE
+URL: https://github.com/agrobioestat/rehydra
+BugReports: https://github.com/agrobioestat/rehydra/issues
+Encoding: UTF-8
+Language: en-US
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
+Depends: R (>= 4.1.0)
+Imports:
+    stats,
+    utils,
+    dplyr,
+    tidyr,
+    tibble,
+    rlang,
+    purrr,
+    ggplot2,
+    readr,
+    boot,
+    generics
+Suggests:
+    testthat (>= 3.0.0),
+    knitr,
+    rmarkdown,
+    shiny,
+    DT,
+    bslib,
+    lme4,
+    lmerTest,
+    pkgload
+Config/testthat/edition: 3
+VignetteBuilder: knitr
+LazyData: true
+LazyDataCompression: xz

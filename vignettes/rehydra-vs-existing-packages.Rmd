@@ -1,0 +1,292 @@
+---
+title: "How rehydra Differs from Existing Packages"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{How rehydra Differs from Existing Packages}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+## How rehydra differs from existing packages
+
+Resistance, recovery and resilience indices are not new to R. `pointRes`
+implements the components of Lloret et al. (2011) and has been the reference
+implementation for well over a decade. `rehydra` uses the same three ratios as
+its starting point, and deliberately so: an index that disagrees with the
+established definition would be a liability, not a feature. The two packages
+nevertheless answer different questions, because they were built for different
+kinds of data.
+
+`pointRes` was written for **dendrochronology**. Its unit of observation is the
+annual growth ring, its unit of disturbance is the pointer year, and the whole
+design follows from that: one value per tree per year, disturbances identified
+retrospectively from the chronology, and resilience components computed from a
+window of years before and after the event.
+
+`rehydra` was written for **controlled drought-rewatering experiments on live
+plants**. The unit of observation is a physiological measurement taken during an
+experiment the researcher designed, and every difference below follows from that
+change of scale.
+
+### Physiological variables instead of ring width
+
+Ring width is a single, always-positive, always-"more-is-better" variable.
+Ecophysiology is not so accommodating. `rehydra` is built around chlorophyll
+fluorescence (`Fv/Fm`, `PhiPSII`, `NPQ`), leaf water potential, stomatal
+conductance, net photosynthesis, transpiration and derived water-use efficiency
+terms — measured in the same experiment, on different scales, and pointing in
+different directions.
+
+Leaf water potential is the awkward case that motivates the design: it is
+negative, and *more negative is worse*. Feeding it to a ratio index unchanged
+produces a resistance value that is confidently backwards. `prepare_rehydra_data()`
+therefore carries an explicit `response_direction` for every variable, and can
+infer it from the variable name:
+
+```r
+library(rehydra)
+data(rehydra_data)
+
+prepared <- prepare_rehydra_data(
+  data = rehydra_data,
+  time = time_days,
+  genotype = genotype,
+  treatment = treatment,
+  replicate = replicate,
+  variables = c(water_potential, stomatal_conductance),
+  response_direction = "auto"
+)
+```
+
+The `transformed_value` column that comes out is on a consistent
+"higher is better", strictly positive performance scale, which is the only scale
+on which the ratio indices `Rt`, `Rc` and `Rs` mean what their definitions say
+they mean.
+
+### Daily and sub-daily resolution instead of annual
+
+A tree ring gives one number per year. A porometer gives one number per plant per
+hour, and a fluorimeter can give many more. That extra resolution is not just
+more of the same data — it makes a different class of index computable.
+
+With one value per year you can only ask *how far* the response fell and *how far*
+it came back. With a densely sampled trajectory you can also ask *how fast*, *in
+what shape*, and *after how long a delay*. `curve_shape_metrics()` reads those
+off the whole series:
+
+- **area under the deficit curve** — the integral of `max(0, baseline − y(t))`,
+  the total performance lost, evaluated by the trapezoidal rule so that irregular
+  sampling is handled correctly;
+- **`t50`** — the interpolated time to close half of the gap, with finer
+  resolution than the sampling interval;
+- **`recovery_rate_k`** — the rate constant of the exponential return, fitted by
+  nonlinear least squares from a log-linear starting value;
+- **`latency`** — the delay between restoring water and the first measurable
+  upturn, which for hydraulic variables is routinely positive and is invisible to
+  any endpoint-based index.
+
+Two plants can share an identical `Rs` and differ completely in all four. The
+whole point of sub-daily data is to be able to tell them apart.
+
+### Multiple cycles in one experiment, with explicit segmentation
+
+`pointRes` identifies disturbances retrospectively, from the statistical
+structure of the chronology. In a designed experiment the researcher *imposed*
+the cycles and knows when they happened.
+
+`segment_drought_cycle()` supports both. In `method = "manual"` the known
+irrigation calendar is supplied directly and the segmentation is exact. In
+`method = "auto"` the phases are detected from smoothed trajectories, first
+derivatives and relative drop/recovery thresholds, each cycle receiving a
+`confidence` score; when detection is not confident the function says so rather
+than returning a quiet guess. Either way the output labels every observation with
+a `cycle` and one of `PreDrought`, `Drought`, `Rewatering`, `PostDrought`, so a
+three-cycle experiment yields three fully separated cycles in one table instead
+of three separate analyses that must be stitched together by hand.
+
+### Experimental design as a first-class citizen
+
+This is the largest structural difference. A dendrochronological package has
+trees and sites. An experimental package has genotypes, treatments, blocks,
+plots, pots, replicates and a randomization — and the indices are *responses* in
+that design, not the end of the analysis.
+
+`rehydra_anova()` fits the randomized-complete-block factorial model the design
+implies, on any index the package computes:
+
+```r
+segments <- segment_drought_cycle(prepared, time = time, value = transformed_value)
+res <- resilience_index(segments)
+
+fit <- rehydra_anova(
+  res,
+  response = "Rs",
+  factors = c("genotype", "treatment")
+)
+fit$anova
+fit$comparisons
+```
+
+It returns the ANOVA table, marginal means whose standard errors come from the
+**pooled residual error** of the model rather than from within-cell standard
+deviations, all pairwise Tukey contrasts, and normality and homogeneity
+diagnostics. One model is fitted per variable and per cycle, because repeated
+cycles measured on the same plants are not independent and a single model
+treating cycle as another crossed factor would understate the standard errors.
+
+When the cycles should be modelled jointly, the dependence goes into the model
+rather than being ignored:
+
+```r
+rehydra_anova(res, response = "Rs",
+              factors = c("genotype", "treatment", "cycle"),
+              by = "variable", random = "plant_id")
+```
+
+Every reported table then comes from the mixed model, and
+`diagnostics$model_type` and `diagnostics$p_value_method` record which model and
+which degrees of freedom produced them.
+
+Two more design tools have no counterpart in a dendrochronological package
+because they only make sense for an experiment someone is about to run or has
+just run: `memory_power()` computes the replication needed to detect a given
+between-cycle effect from the non-central t distribution, with paired and
+independent designs, and `memory_power_pilot()` extracts the residual standard
+deviation and the between-cycle correlation from a pilot to feed it.
+
+### Between-cycle memory indices
+
+Nothing in `pointRes` asks whether a tree that survived one drought handles the
+next one better, because with annual resolution and retrospective disturbance
+detection the question is very hard to pose. In an experiment with an imposed
+sequence of cycles it is the central question, and it is the concept `rehydra`
+was built around.
+
+`memory_effect()` contrasts cycles pairwise:
+
+```r
+memory <- memory_effect(res, cycle_ref = 1, cycle_test = 2)
+memory[, c("genotype", "Mem_Rt", "Mem_Rc", "Mem_Rs", "interpretation")]
+```
+
+`memory_trend()` fits the whole sequence when there are three or more cycles,
+returning the **memory rate** — the average change in an index per additional
+cycle — with its confidence interval, p-value and a `monotonic_fraction` that
+exposes a slope driven by one anomalous cycle rather than by a consistent
+progression:
+
+```r
+memory_trend(res, min_cycles = 2)
+```
+
+And `priming_classification()` turns the numbers into the categories
+physiologists actually report: `positive_priming`, `negative_priming`,
+`neutral_memory`, `overcompensation`, `incomplete_recovery`, `maladaptation`.
+
+The direction of "better" is handled automatically. For damage-type indices
+(`deficit_auc`, `total_reduction`, `mean_reduction`, `t50`, `residual_deficit`)
+a falling value means the plant coped better, so `memory_trend()` flips the sign
+before labelling and `"acquired_memory"` always means the same thing regardless
+of which index it describes. `memory_direction()` exposes that mapping.
+
+### A superset of the published index families
+
+`rehydra` implements the Lloret components and adds the families that describe
+duration, average intensity and curve shape, so that a study does not have to
+choose one summary of the episode:
+
+| Family | Function | Indices |
+|---|---|---|
+| Lloret et al. (2011) | `resilience_index()` | `Rt`, `Rc`, `Rs` |
+| Duration and total loss | `recovery_period_metrics()` | `recovery_period`, `total_reduction` |
+| Average intensity and rate | `mean_reduction_metrics()` | `mean_reduction`, `mean_recovery_rate` |
+| Curve shape | `curve_shape_metrics()` | `deficit_auc`, `t50`, `recovery_rate_k`, `latency` |
+| Memory | `memory_effect()`, `memory_trend()` | `Mem_*`, memory rate, priming class |
+| All of them | `rehydra_indices()` | every family joined on one key |
+
+All five families read the same five landmarks — baseline, stress onset,
+rewatering onset, trough, series end — extracted once by a shared internal
+routine. They therefore cannot disagree about where the trough or the baseline
+is, which is what makes the indices comparable to each other within a single
+analysis.
+
+Two details that matter for honest reporting are handled explicitly.
+`recovery_period` is **right-censored** when the series ends before the response
+returns to the recovery threshold: it is reported as `NA` with
+`recovery_censored = TRUE`, not silently truncated to the length of the
+experiment, which would make the slowest genotypes look like the fastest. And
+`stress_detected` flags cycles whose trough never left the baseline — control
+series, or a stress too mild to register — so those rows can be filtered instead
+of being averaged in as if they were recoveries.
+
+### One score across variables
+
+Because several variables are measured in the same experiment,
+`composite_resilience()` collapses an index across them into a single score, by
+PCA, by an unweighted mean or with weights decided a priori:
+
+```r
+score <- composite_resilience(res, metric = "Rs")
+composite_loadings(score)
+```
+
+The `variance_explained` that comes back is the point of using PCA here rather
+than a plain average: a first component explaining 0.8 means the variables
+largely agree and one score is a fair summary, while 0.4 means they disagree and
+the composite is hiding a trade-off that belongs in the results per variable.
+
+### Sub-daily rhythms
+
+The resolution that makes curve-shape indices possible also brings a problem a
+yearly series never has: stomatal conductance and photosynthesis swing more
+between dawn and midday than the drought moves them, so a trough detected on the
+raw series can be noon. `detrend_diurnal()` separates the two, estimating the
+daily rhythm jointly with an across-days component so that the multi-day drought
+course is preserved rather than partly absorbed into the daily wave:
+
+```r
+hourly <- detrend_diurnal(prepared, time = timestamp)
+segment_drought_cycle(hourly, time = time, value = detrended)
+```
+
+### In short
+
+| | `pointRes` | `rehydra` |
+|---|---|---|
+| Data | Annual ring width | Physiological time series |
+| Resolution | Yearly | Daily / sub-daily |
+| Disturbance | Detected retrospectively | Imposed and segmented |
+| Cycles | One event at a time | Several cycles per experiment |
+| Design | Trees and sites | Genotype, treatment, block, replicate |
+| Inference | Index summaries | ANOVA, marginal means, Tukey contrasts |
+| Memory | Not addressed | Pairwise and multi-cycle memory indices |
+| Repeated measures | Not applicable | Mixed model across cycles |
+| Multiple variables | One (ring width) | Combined into a composite score |
+| Sub-daily rhythms | Not applicable | Diurnal detrending |
+| Planning | Not addressed | Power and replication for a memory effect |
+| Interface | R only | R plus a bundled Shiny application |
+
+The packages are complements, not competitors. Analysing tree-ring chronologies
+is what `pointRes` is for. Analysing a designed drought-rewatering experiment on
+live plants, at physiological resolution, across repeated cycles, is what
+`rehydra` is for.
+
+## References
+
+- Lloret, F., Keeling, E. G., Sala, A. (2011) <doi:10.1111/j.1600-0706.2011.19372.x>
+- Xu, Z., Zhou, G., Shimizu, H. (2010) <doi:10.4161/psb.5.6.11398>
+- Ribeiro et al. (2021) <doi:10.1016/j.jplph.2021.153397>
+
+Run `rehydra_references()` for the machine-readable version, including which
+DOIs have been verified as resolvable.
+
+The recovery-period, total-reduction, mean-reduction and mean-recovery-rate
+components carry no citation on purpose. They are generic quantities - time to
+return to baseline, cumulative loss, average deficit, average rate - and their
+exact definitions are given as mathematics in `?recovery_period_metrics` and
+`?mean_reduction_metrics`. Attributing them to a work that could not be verified
+would be worse than describing precisely what is computed.

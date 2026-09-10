@@ -1,0 +1,193 @@
+---
+title: "Getting Started with rehydra"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting Started with rehydra}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+## Installation
+
+```r
+# install.packages("rehydra")
+```
+
+## Load package and data
+
+```r
+library(rehydra)
+data(rehydra_data)
+```
+
+## Prepare data
+
+```r
+prepared <- prepare_rehydra_data(
+  data = rehydra_data,
+  time = time_days,
+  genotype = genotype,
+  treatment = treatment,
+  replicate = replicate,
+  variables = c(water_potential, stomatal_conductance),
+  response_direction = "auto"
+)
+```
+
+## Segment drought cycles
+
+```r
+segments <- segment_drought_cycle(
+  data = prepared,
+  time = time,
+  value = transformed_value,
+  group_by = c("genotype", "treatment", "replicate", "variable"),
+  method = "auto"
+)
+```
+
+## Compute basic indices
+
+```r
+damage <- damage_metrics(segments)
+recovery <- recovery_metrics(segments)
+resilience <- resilience_index(segments)
+memory <- memory_effect(resilience, damage, recovery)
+```
+
+## Extended index families
+
+Recovery period and total reduction, mean reduction and mean recovery rate, and
+the shape of the damage and recovery curves. Each index is defined in full in
+its help page; see `?recovery_period_metrics` and `?mean_reduction_metrics` for
+the mathematics.
+
+```r
+recovery_period <- recovery_period_metrics(segments)
+mean_reduction <- mean_reduction_metrics(segments)
+shape <- curve_shape_metrics(segments)
+
+shape[, c("deficit_auc", "t50", "recovery_rate_k", "latency")]
+```
+
+`recovery_period` is reported as `NA` with `recovery_censored = TRUE` when the
+series ends before the response returns to the threshold, and `stress_detected`
+flags cycles whose trough never left the baseline (control series).
+
+## Memory across several cycles
+
+```r
+# Pairwise: every cycle against the one before it
+memory_effect(resilience, cycle_test = "previous")
+
+# Whole sequence: the average change in the index per additional cycle
+memory_trend(resilience, min_cycles = 2)
+```
+
+## Everything in one table
+
+```r
+idx <- rehydra_indices(segments)
+idx[, c("genotype", "cycle", "Rs", "deficit_auc", "mean_reduction", "t50")]
+```
+
+## Analyse the indices as a designed experiment
+
+```r
+fit <- rehydra_anova(resilience, response = "Rs",
+                     factors = c("genotype", "treatment"))
+fit$anova
+fit$comparisons
+```
+
+By default one model is fitted per variable and per cycle, because repeated
+cycles on the same plants are not independent. To model the cycles jointly,
+move `cycle` into `factors` and declare the plant as a random intercept:
+
+```r
+rehydra_anova(resilience, response = "Rs",
+              factors = c("genotype", "treatment", "cycle"),
+              by = "variable", random = "plant_id")
+```
+
+Every table then comes from the mixed model; `diagnostics$model_type` and
+`diagnostics$p_value_method` say which model and which degrees of freedom
+produced the numbers.
+
+## One score from several variables
+
+```r
+score <- composite_resilience(resilience, metric = "Rs")
+composite_loadings(score)
+```
+
+`variance_explained` is the diagnostic that matters: a high value means the
+variables agree and a single score is a fair summary, a low one means they
+disagree and the composite is hiding a trade-off worth reporting per variable.
+
+## Sub-daily series
+
+```r
+# Strip the daily rhythm before segmenting, so the trough is water stress
+# and not midday.
+hourly <- detrend_diurnal(prepared, time = time, value = transformed_value)
+segment_drought_cycle(hourly, time = time, value = detrended)
+```
+
+## Planning the next experiment
+
+```r
+pilot <- memory_power_pilot(resilience, metric = "Rs")
+memory_power(effect = 0.05, sd = pilot$sd[[1]], power = 0.8,
+             design = "paired", correlation = pilot$correlation[[1]])
+```
+
+## Run the whole pipeline in one call
+
+```r
+result <- summarize_rehydra(
+  data = rehydra_data,
+  time = time_days,
+  genotype = genotype,
+  treatment = treatment,
+  replicate = replicate,
+  variables = c(water_potential, stomatal_conductance)
+)
+
+result$curve_shape
+result$memory_trend
+```
+
+## Visualize trajectories
+
+```r
+plot_recovery_trajectory(
+  data = segments,
+  resilience_results = resilience,
+  facet_by = c("genotype", "variable")
+)
+
+# Full series with the deficit area shaded, the trough and t50 marked
+drought <- segments[segments$treatment == "Drought" &
+  segments$variable == "stomatal_conductance" &
+  segments$replicate == "1", ]
+plot_deficit_auc(drought)
+
+plot_curve_shape(shape)
+plot_extended_indices(recovery_period, mean_reduction)
+plot_memory_trend(resilience, memory_trend(resilience, min_cycles = 2))
+```
+
+## References
+
+- Lloret et al. (2011) <doi:10.1111/j.1600-0706.2011.19372.x>
+- Xu et al. (2010) <doi:10.4161/psb.5.6.11398>
+- Ribeiro et al. (2021) <doi:10.1016/j.jplph.2021.153397>
+
+See `rehydra_references()` for the machine-readable list, and
+`vignette("rehydra-vs-existing-packages")` for how the package relates to
+`pointRes`.

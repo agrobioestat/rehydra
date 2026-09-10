@@ -1,0 +1,99 @@
+---
+title: "Using the rehydra Shiny App"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Using the rehydra Shiny App}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+## Open the app
+
+```r
+library(rehydra)
+# run_rehydra_app()
+```
+
+## Expected CSV format
+
+The app accepts long or wide data. Recommended columns include:
+
+- `time_days` (or equivalent time column)
+- `genotype`
+- `treatment`
+- `replicate`
+- `cycle` and `phase` (optional)
+- physiological variables such as `water_potential` and `stomatal_conductance`
+
+## Automatic segmentation
+
+1. Upload a CSV or enable bundled example data.
+2. Map required columns in the sidebar.
+3. Select `automatic` segmentation.
+4. Click **Run analysis**.
+
+## Manual segmentation
+
+1. Select `manual` segmentation.
+2. Define drought and rewatering windows for cycle 1 and cycle 2.
+3. Click **Run analysis** to apply custom events.
+
+## Analysis tabs
+
+| Tab | What it shows |
+|---|---|
+| Data | Preview and data-quality checks |
+| Segmentation | Detected cycles and phases with confidence scores |
+| Trajectory | Trajectories with phase shading and index annotations |
+| Damage and Recovery | Classic damage and recovery metrics |
+| Deficit curve (AUC) | Full series with the deficit area shaded, trough and `t50` marked |
+| Extended indices | Recovery-period and mean-reduction components |
+| Resilience | `Rt`, `Rc`, `Rs` |
+| Memory | Pairwise cycle contrasts and priming classes |
+| Multi-cycle memory | Memory trend across cycles, consecutive contrasts |
+| Designed analysis | ANOVA, marginal means, Tukey contrasts, diagnostics |
+| Genotype comparison | Pairwise genotype tests |
+| Export | Downloads |
+
+### Deficit curve (AUC)
+
+Select a variable, treatment and replicate; the panel draws one series at a time
+because the shaded area is a per-series quantity. The shaded band is the
+integral of `max(0, baseline - response)`, the cross marks the trough and the
+open circle the time to half recovery.
+
+### Extended indices
+
+Tables and boxplots for `recovery_period_metrics()` and
+`mean_reduction_metrics()`.
+`recovery_censored = TRUE` means the series ended before the response returned to
+the threshold, so `recovery_period` is reported as `NA` rather than truncated.
+
+### Multi-cycle memory
+
+Switch between the resilience family (`Rt`, `Rc`, `Rs`) and the curve-shape
+family (AUC, `t50`, `k`). The fitted slope is the average change per additional
+cycle; read it together with `monotonic_fraction`, which exposes a slope driven
+by the endpoints rather than by a consistent progression.
+
+### Designed analysis
+
+Pick an index table and a response, and the app fits the factorial model with
+`rehydra_anova()`, one model per variable and per cycle.
+
+## Exporting results
+
+The **Export** tab provides:
+
+- CSV table download (every result table, tagged by `result_table`, including
+  the period, reduction, curve-shape and memory-trend tables)
+- trajectory PNG plot download
+- HTML report download
+
+## Notes
+
+The app is intentionally not launched automatically in package examples or tests.

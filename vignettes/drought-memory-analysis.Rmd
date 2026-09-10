@@ -1,0 +1,130 @@
+---
+title: "Drought Memory Analysis with rehydra"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Drought Memory Analysis with rehydra}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+## Conceptual background
+
+rehydra follows the resistance-recovery-resilience framework and extends it with operational drought-memory metrics across repeated stress cycles.
+
+## Data and preparation
+
+```r
+library(rehydra)
+data(rehydra_data)
+
+prepared <- prepare_rehydra_data(
+  data = rehydra_data,
+  time = time_days,
+  genotype = genotype,
+  treatment = treatment,
+  replicate = replicate,
+  variables = c(water_potential, stomatal_conductance),
+  response_direction = "auto"
+)
+```
+
+## Segmentation
+
+```r
+segments <- segment_drought_cycle(
+  data = prepared,
+  time = time,
+  value = transformed_value,
+  method = "auto"
+)
+```
+
+## Resistance, recovery, and resilience
+
+```r
+resilience <- resilience_index(segments)
+head(resilience)
+```
+
+## Damage and recovery dynamics
+
+```r
+damage <- damage_metrics(segments)
+recovery <- recovery_metrics(segments)
+```
+
+## Memory effects
+
+```r
+memory <- memory_effect(
+  resilience_results = resilience,
+  damage_results = damage,
+  recovery_results = recovery,
+  cycle_ref = 1,
+  cycle_test = 2
+)
+
+classification <- priming_classification(memory)
+head(classification)
+```
+
+## Memory across three or more cycles
+
+`memory_effect()` compares two cycles at a time. When the experiment imposed
+several cycles, `memory_trend()` fits the whole sequence and returns the memory
+rate: the average change in the index per additional cycle.
+
+```r
+trend <- memory_trend(resilience, min_cycles = 2)
+trend[, c("genotype", "metric", "slope", "p_value", "monotonic_fraction",
+          "memory_class")]
+```
+
+`monotonic_fraction` is the proportion of consecutive cycle-to-cycle steps that
+move with the slope. A significant slope with a fraction near `0.5` is driven by
+the endpoints rather than by a consistent progression.
+
+The same trend can be fitted on the curve-shape indices, where a *falling* value
+means an improvement; `memory_trend()` flips the direction automatically, so
+`"acquired_memory"` always means the plant coped better in the later cycles.
+
+```r
+shape <- curve_shape_metrics(segments)
+memory_trend(shape, metrics = c("deficit_auc_normalized", "t50"), min_cycles = 2)
+```
+
+## Testing the indices in the experimental design
+
+```r
+fit <- rehydra_anova(resilience, response = "Rs",
+                     factors = c("genotype", "treatment"))
+fit$anova
+fit$means
+fit$comparisons
+```
+
+## Genotype comparison
+
+```r
+comparison <- compare_genotypes(resilience, metric = "Rs")
+comparison$pairwise
+```
+
+## Key visual summaries
+
+```r
+plot_resilience_indices(resilience)
+plot_memory_effect(memory)
+plot_damage_recovery(damage, recovery)
+plot_memory_trend(resilience, trend)
+```
+
+## References
+
+- Lloret et al. (2011) <doi:10.1111/j.1600-0706.2011.19372.x>
+- Xu et al. (2010) <doi:10.4161/psb.5.6.11398>
+- Ribeiro et al. (2021) <doi:10.1016/j.jplph.2021.153397>

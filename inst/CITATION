@@ -1,0 +1,100 @@
+# ------------------------------------------------------------------------------
+# CRAN ALERT: every `doi =` field below is validated by `R CMD check --as-cran`.
+# Only DOIs that were confirmed to resolve at https://doi.org are listed here.
+# Every DOI below was confirmed against CrossRef and by resolving
+# https://doi.org/<doi>. See the checklist at the top of R/references.R.
+# The recovery-period, total-reduction, mean-reduction and mean-recovery-rate
+# components are deliberately uncited: their definitions are given as
+# mathematics in the help pages instead. See R/references.R.
+#
+# NOTE ON THE REPOSITORY URL: `R CMD check --as-cran` fetches every URL it finds
+# and reports a 404 as a NOTE. GitHub answers 404 for PRIVATE repositories, so
+# the repository must be PUBLIC before submitting, or this link becomes a
+# blocking comment exactly like a broken DOI. Verify with:
+#     curl -sI https://github.com/agrobioestat/rehydra | head -1   # expect 200
+# ------------------------------------------------------------------------------
+
+citHeader("To cite rehydra in publications, use:")
+
+bibentry(
+  bibtype = "Manual",
+  title = "rehydra: Resistance, Recovery and Resilience Indices for Drought-Rewatering Cycles in Plants",
+  author = c(person("Joao Everthon da Silva", "Ribeiro")),
+  year = "2026",
+  note = "R package version 0.2.0",
+  url = "https://github.com/agrobioestat/rehydra",
+  header = "Package citation:"
+)
+
+bibentry(
+  bibtype = "Article",
+  title = "Components of tree resilience: effects of successive low-growth episodes in old ponderosa pine forests",
+  author = c(
+    person("Francisco", "Lloret"),
+    person("Eric G.", "Keeling"),
+    person("Anna", "Sala")
+  ),
+  journal = "Oikos",
+  volume = "120",
+  number = "12",
+  pages = "1909--1920",
+  year = "2011",
+  doi = "10.1111/j.1600-0706.2011.19372.x",
+  header = "Resistance, recovery and resilience indices (Rt, Rc, Rs):"
+)
+
+bibentry(
+  bibtype = "Article",
+  title = "Proposal of an index of stability for evaluating plant drought memory: a case study in sugarcane",
+  author = c(
+    person("Rafael V.", "Ribeiro"),
+    person("Karine A.", "Vitti"),
+    person("Fernanda C. C.", "Marcos"),
+    person("Gustavo M.", "Souza"),
+    person("Maria D.", "Pissolato"),
+    person("Luiz Fernando R.", "Almeida"),
+    person("Eduardo C.", "Machado")
+  ),
+  journal = "Journal of Plant Physiology",
+  volume = "260",
+  pages = "153397",
+  year = "2021",
+  doi = "10.1016/j.jplph.2021.153397",
+  header = "Drought memory and the overall stability index (memory_effect, memory_trend, stability_index):"
+)
+
+bibentry(
+  bibtype = "Article",
+  title = "Towards a comparable quantification of resilience",
+  author = c(
+    person("Johannes", "Ingrisch"),
+    person("Michael", "Bahn")
+  ),
+  journal = "Trends in Ecology and Evolution",
+  volume = "33",
+  number = "4",
+  pages = "251--259",
+  year = "2018",
+  doi = "10.1016/j.tree.2018.01.013",
+  header = "Resilience quantification framework:"
+)
+
+bibentry(
+  bibtype = "Article",
+  title = "Plant responses to drought and rewatering",
+  author = c(
+    person("Zhenzhu", "Xu"),
+    person("Guangsheng", "Zhou"),
+    person("Hideyuki", "Shimizu")
+  ),
+  journal = "Plant Signaling and Behavior",
+  volume = "5",
+  number = "6",
+  pages = "649--654",
+  year = "2010",
+  doi = "10.4161/psb.5.6.11398",
+  header = "Drought-rewatering framework:"
+)
+
+
+

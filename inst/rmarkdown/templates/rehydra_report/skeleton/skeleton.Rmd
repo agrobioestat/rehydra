@@ -1,0 +1,206 @@
+---
+title: "rehydra Automated Report"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+params:
+  analysis: NULL
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+analysis <- params$analysis
+```
+
+# Data Summary
+
+```{r}
+cat("Prepared rows:", nrow(analysis$data), "\n")
+cat("Variables:", paste(sort(unique(analysis$data$variable)), collapse = ", "), "\n")
+cat("Genotypes:", paste(sort(unique(analysis$data$genotype)), collapse = ", "), "\n")
+```
+
+# Data Checks
+
+```{r}
+analysis$checks
+```
+
+# Cycle Description
+
+```{r}
+analysis$segments |>
+  dplyr::count(cycle, phase)
+```
+
+# Trajectory Plot
+
+```{r, fig.height=5.5, fig.width=9}
+rehydra::plot_recovery_trajectory(
+  data = analysis$segments,
+  resilience_results = analysis$resilience
+)
+```
+
+# Damage Metrics
+
+```{r}
+analysis$damage
+```
+
+# Recovery Metrics
+
+```{r}
+analysis$recovery
+```
+
+# Area Under the Deficit Curve
+
+```{r, fig.height=5.5, fig.width=9}
+if (!is.null(analysis$segments) && nrow(analysis$segments) > 0) {
+  # One representative drought series per variable: the shaded area is a
+  # per-series quantity and overlaying every plant makes it unreadable.
+  seg <- analysis$segments
+  pick <- seg[seg$treatment %in% c("Drought", "drought"), , drop = FALSE]
+  if (nrow(pick) == 0) pick <- seg
+  first_rep <- sort(unique(pick$replicate))[1]
+  pick <- pick[pick$replicate == first_rep, , drop = FALSE]
+
+  rehydra::plot_deficit_auc(pick, facet_by = c("genotype", "variable"))
+}
+```
+
+# Curve-Shape Metrics
+
+```{r}
+if (!is.null(analysis$curve_shape) && nrow(analysis$curve_shape) > 0) {
+  dplyr::select(
+    analysis$curve_shape,
+    dplyr::any_of(c("genotype", "treatment", "replicate", "variable", "cycle",
+                    "stress_detected", "deficit_auc", "deficit_auc_normalized",
+                    "t50", "recovery_rate_k", "recovery_half_life",
+                    "rate_r_squared", "latency", "residual_deficit"))
+  )
+}
+```
+
+```{r, fig.height=5, fig.width=9}
+if (!is.null(analysis$curve_shape) && nrow(analysis$curve_shape) > 0) {
+  rehydra::plot_curve_shape(analysis$curve_shape)
+}
+```
+
+# Period and Reduction Components
+
+```{r}
+if (!is.null(analysis$recovery_period) && nrow(analysis$recovery_period) > 0) {
+  analysis$recovery_period
+}
+```
+
+```{r}
+if (!is.null(analysis$mean_reduction) && nrow(analysis$mean_reduction) > 0) {
+  analysis$mean_reduction
+}
+```
+
+```{r, fig.height=5, fig.width=9}
+if (!is.null(analysis$recovery_period) && nrow(analysis$recovery_period) > 0) {
+  rehydra::plot_extended_indices(analysis$recovery_period, analysis$mean_reduction)
+}
+```
+
+# Resilience Indices
+
+```{r}
+analysis$resilience
+```
+
+```{r, fig.height=4.8, fig.width=8}
+rehydra::plot_resilience_indices(analysis$resilience)
+```
+
+# Physiological Memory
+
+```{r}
+analysis$memory
+```
+
+```{r, fig.height=4.8, fig.width=8}
+rehydra::plot_memory_effect(analysis$memory)
+```
+
+# Memory Across Cycles
+
+```{r}
+if (!is.null(analysis$memory_trend) && nrow(analysis$memory_trend) > 0) {
+  dplyr::select(
+    analysis$memory_trend,
+    dplyr::any_of(c("genotype", "treatment", "variable", "metric", "n_cycles",
+                    "slope", "slope_conf_low", "slope_conf_high", "p_value",
+                    "p_value_adj", "monotonic_fraction", "memory_class"))
+  )
+} else {
+  cat("At least two segmented cycles are needed to fit a memory trend.\n")
+}
+```
+
+```{r, fig.height=5, fig.width=9}
+if (!is.null(analysis$memory_trend) && nrow(analysis$memory_trend) > 0) {
+  rehydra::plot_memory_trend(analysis$resilience, analysis$memory_trend)
+}
+```
+
+# Priming Classification
+
+```{r}
+analysis$classification
+```
+
+# Genotype Comparison
+
+```{r}
+if (is.list(analysis$genotype_comparison) && "pairwise" %in% names(analysis$genotype_comparison)) {
+  analysis$genotype_comparison$pairwise
+}
+```
+
+# Short Scientific Interpretation
+
+```{r}
+mem <- analysis$memory
+if (nrow(mem) > 0) {
+  pos_rt <- sum(mem$Mem_Rt > 0, na.rm = TRUE)
+  pos_rc <- sum(mem$Mem_Rc > 0, na.rm = TRUE)
+  cat("Groups with positive resistance memory:", pos_rt, "\n")
+  cat("Groups with positive recovery memory:", pos_rc, "\n")
+}
+
+trend <- analysis$memory_trend
+if (!is.null(trend) && nrow(trend) > 0 && "memory_class" %in% names(trend)) {
+  tab <- table(trend$memory_class)
+  for (nm in names(tab)) {
+    cat("Index-by-group trends classified as ", nm, ": ", tab[[nm]], "\n", sep = "")
+  }
+}
+
+shape <- analysis$curve_shape
+if (!is.null(shape) && nrow(shape) > 0 && "recovery_censored" %in% names(analysis$recovery_period)) {
+  n_cens <- sum(analysis$recovery_period$recovery_censored, na.rm = TRUE)
+  if (n_cens > 0) {
+    cat("Right-censored recoveries (series ended before the threshold): ",
+        n_cens, " of ", nrow(analysis$recovery_period), "\n", sep = "")
+  }
+}
+```
+
+# References
+
+- Lloret et al. (2011) <doi:10.1111/j.1600-0706.2011.19372.x>
+- Xu et al. (2010) <doi:10.4161/psb.5.6.11398>
+- Ribeiro et al. (2021) <doi:10.1016/j.jplph.2021.153397>
+
+```{r}
+rehydra::rehydra_references()
+```
